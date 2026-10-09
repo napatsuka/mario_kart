@@ -665,7 +665,8 @@ async function startRace(ctx) {
   audio.ensure();
   if (settings.control === 'tilt') await Input.requestTiltPermission();
   if (isTouch) {
-    try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+    // 全画面化の応答が返らない環境でも止まらないよう、0.5秒で待つのをやめる
+    try { await Promise.race([document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }), new Promise(r => setTimeout(r, 500))]); } catch {}
   }
   disposeBackground();
   audio.stopMusic();
@@ -771,6 +772,24 @@ function nextAfterResult() {
     <table class="res">${ranking.map(([n, p], i) => `<tr class="${n === profile.name ? 'me' : ''}"><td class="r">${i + 1}</td><td class="pi">${portraitImg(st.charOf?.[n])}</td><td>${esc(n)}</td><td class="t">${p}pt</td></tr>`).join('')}</table>
     <div class="ov-actions"><button class="btn primary" data-ov="menu">メニューへ</button></div>`);
 }
+
+// ---------- スマホでの拡大を防ぐ(iOS Safari は viewport の user-scalable=no を無視するため) ----------
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false }); // ピンチ
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { // ダブルタップ
+  const now = Date.now();
+  if (now - lastTouchEnd < 350 && !e.target.closest('input, textarea')) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+// 入力欄からフォーカスが外れたら、拡大されていても元の倍率に戻す
+document.addEventListener('focusout', e => {
+  if (!e.target.matches?.('input, textarea')) return;
+  const vp = document.querySelector('meta[name=viewport]');
+  const c = vp.content; vp.content = c + ', width=device-width'; requestAnimationFrame(() => (vp.content = c));
+  scrollTo(0, 0);
+});
 
 // ---------- 起動 ----------
 window.__game = { get race() { return race; }, get bg() { return bg; }, renderer, audio, frame(ms = 34) { lastFrame = performance.now() - ms; loop(performance.now()); }, screens }; // デバッグ用

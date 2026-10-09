@@ -3,7 +3,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#1846c4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,7 +25,7 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: #0c0f24; color: #fff; font-family: var(--ui);
   -webkit-user-select: none; user-select: none; touch-action: none; overscroll-behavior: none; }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-button { font: inherit; cursor: pointer; color: inherit; }
+button { font: inherit; cursor: pointer; color: inherit; touch-action: manipulation; } /* ダブルタップで拡大しない */
 .hidden { display: none !important; }
 :focus { outline: none; }
 
@@ -171,7 +171,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .ok-btn:hover, .ok-btn:focus-visible { transform: skewX(-8deg) scale(1.06); }
 .ok-btn:active { transform: skewX(-8deg) translateY(4px); box-shadow: 0 2px 0 var(--yellow-d); }
 .ok-btn.inline { position: static; margin-top: 14px; font-size: 22px; }
-input[type=text] { font: inherit; font-weight: 800; padding: 6px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; width: 170px; touch-action: auto; -webkit-user-select: text; user-select: text; }
+input[type=text] { font: inherit; font-size: 16px; font-weight: 800; padding: 6px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; width: 170px; touch-action: auto; -webkit-user-select: text; user-select: text; }
 
 /* ================= カップ / コース ================= */
 .cup-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -219,7 +219,7 @@ input[type=range] { width: 150px; height: 32px; accent-color: var(--yellow); }
 .toggle.on::after { left: 29px; }
 .toggle:focus-visible { box-shadow: 0 0 0 3px var(--yellow); }
 .note { font-size: 13px; opacity: .85; line-height: 1.6; font-weight: 600; }
-textarea { width: 100%; min-height: 70px; border-radius: 12px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; padding: 8px; font: 12px monospace; touch-action: auto; -webkit-user-select: text; user-select: text; }
+textarea { width: 100%; min-height: 70px; border-radius: 12px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; padding: 8px; font: 16px monospace; touch-action: auto; -webkit-user-select: text; user-select: text; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 10px 20px; border: 3px solid #fff; border-radius: 16px;
   background: rgba(0,0,0,.4); font-weight: 900; font-size: 16px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
@@ -5363,7 +5363,8 @@ async function startRace(ctx) {
   audio.ensure();
   if (settings.control === 'tilt') await Input.requestTiltPermission();
   if (isTouch) {
-    try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+    // 全画面化の応答が返らない環境でも止まらないよう、0.5秒で待つのをやめる
+    try { await Promise.race([document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }), new Promise(r => setTimeout(r, 500))]); } catch {}
   }
   disposeBackground();
   audio.stopMusic();
@@ -5469,6 +5470,24 @@ function nextAfterResult() {
     <table class="res">${ranking.map(([n, p], i) => `<tr class="${n === profile.name ? 'me' : ''}"><td class="r">${i + 1}</td><td class="pi">${portraitImg(st.charOf?.[n])}</td><td>${esc(n)}</td><td class="t">${p}pt</td></tr>`).join('')}</table>
     <div class="ov-actions"><button class="btn primary" data-ov="menu">メニューへ</button></div>`);
 }
+
+// ---------- スマホでの拡大を防ぐ(iOS Safari は viewport の user-scalable=no を無視するため) ----------
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false }); // ピンチ
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { // ダブルタップ
+  const now = Date.now();
+  if (now - lastTouchEnd < 350 && !e.target.closest('input, textarea')) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+// 入力欄からフォーカスが外れたら、拡大されていても元の倍率に戻す
+document.addEventListener('focusout', e => {
+  if (!e.target.matches?.('input, textarea')) return;
+  const vp = document.querySelector('meta[name=viewport]');
+  const c = vp.content; vp.content = c + ', width=device-width'; requestAnimationFrame(() => (vp.content = c));
+  scrollTo(0, 0);
+});
 
 // ---------- 起動 ----------
 window.__game = { get race() { return race; }, get bg() { return bg; }, renderer, audio, frame(ms = 34) { lastFrame = performance.now() - ms; loop(performance.now()); }, screens }; // デバッグ用

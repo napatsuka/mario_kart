@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#1846c4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -25,7 +25,7 @@
 html, body { margin: 0; height: 100%; overflow: hidden; background: #0c0f24; color: #fff; font-family: var(--ui);
   -webkit-user-select: none; user-select: none; touch-action: none; overscroll-behavior: none; }
 #gl { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-button { font: inherit; cursor: pointer; color: inherit; }
+button { font: inherit; cursor: pointer; color: inherit; touch-action: manipulation; } /* ダブルタップで拡大しない */
 .hidden { display: none !important; }
 :focus { outline: none; }
 
@@ -171,7 +171,7 @@ button { font: inherit; cursor: pointer; color: inherit; }
 .ok-btn:hover, .ok-btn:focus-visible { transform: skewX(-8deg) scale(1.06); }
 .ok-btn:active { transform: skewX(-8deg) translateY(4px); box-shadow: 0 2px 0 var(--yellow-d); }
 .ok-btn.inline { position: static; margin-top: 14px; font-size: 22px; }
-input[type=text] { font: inherit; font-weight: 800; padding: 6px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; width: 170px; touch-action: auto; -webkit-user-select: text; user-select: text; }
+input[type=text] { font: inherit; font-size: 16px; font-weight: 800; padding: 6px 10px; border-radius: 10px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; width: 170px; touch-action: auto; -webkit-user-select: text; user-select: text; }
 
 /* ================= カップ / コース ================= */
 .cup-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
@@ -219,7 +219,7 @@ input[type=range] { width: 150px; height: 32px; accent-color: var(--yellow); }
 .toggle.on::after { left: 29px; }
 .toggle:focus-visible { box-shadow: 0 0 0 3px var(--yellow); }
 .note { font-size: 13px; opacity: .85; line-height: 1.6; font-weight: 600; }
-textarea { width: 100%; min-height: 70px; border-radius: 12px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; padding: 8px; font: 12px monospace; touch-action: auto; -webkit-user-select: text; user-select: text; }
+textarea { width: 100%; min-height: 70px; border-radius: 12px; border: 2px solid rgba(255,255,255,.3); background: rgba(0,0,0,.35); color: #fff; padding: 8px; font: 16px monospace; touch-action: auto; -webkit-user-select: text; user-select: text; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 10px 20px; border: 3px solid #fff; border-radius: 16px;
   background: rgba(0,0,0,.4); font-weight: 900; font-size: 16px; box-shadow: 0 4px 0 rgba(0,0,0,.35); }
